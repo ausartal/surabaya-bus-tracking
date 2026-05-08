@@ -4,3 +4,5 @@ dist
 build
 out
 .env
+.DS_Store
+*.log   
