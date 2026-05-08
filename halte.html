@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <!-- HTML Meta Tags -->
+    <title>Halte</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="./images/favicon-96x96.png"
+      sizes="96x96"
+    />
+    <link rel="icon" type="image/svg+xml" href="./images/favicon.svg" />
+    <link rel="shortcut icon" href="./images/favicon.ico" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./images/apple-touch-icon.png"
+    />
+    <meta name="apple-mobile-web-app-title" content="Bus Tracker" />
+    <link rel="manifest" href="./images/site.webmanifest" />
+    <meta
+      name="description"
+      content="Lacak Suroboyo Bus, Trans Semanggi, dan Feeder Wira-Wiri di Surabaya langsung dari web"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./map.css" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Sarabun:wght@800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://rawcdn.githack.com/bbecquet/Leaflet.RotatedMarker/refs/heads/master/leaflet.rotatedMarker.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="navbar-items">
+        <a href="javascript:history.back();">
+          <span class="material-icons back-button"> arrow_back_ios </span>
+        </a>
+        <p id="nav-title">Detail Halte</p>
+      </div>
+    </div>
+    <div id="location-button" class="button" onclick="getLocation()">
+      <span class="material-icons"> my_location </span>
+    </div>
+    <div id="route-panel">
+      <div id="route-items">
+        <div id="expand-panel"></div>
+        <div id="route-info">
+          <div id="route-name">nama halte</div>
+          <div class="transit-list">
+            <a href="./map.html?route=sbr1"
+              ><div
+                style="
+                  color: white;
+                  background-color: #d23c41;
+                  border: 3px solid #d23c41;
+                "
+                class="route-pill trunk-pill"
+              >
+                R1
+              </div></a
+            ><a href="./map.html?route=fd06"
+              ><div
+                style="
+                  color: #da8539;
+                  background-color: white;
+                  border: 3px solid;
+                "
+                class="route-pill feeder-pill"
+              >
+                6
+              </div></a
+            ><a href="./map.html?route=fd03"
+              ><div
+                style="
+                  color: #43b0dc;
+                  background-color: white;
+                  border: 3px solid;
+                "
+                class="route-pill feeder-pill"
+              >
+                3
+              </div></a
+            ><a href="./map.html?route=fd04"
+              ><div
+                style="
+                  color: #8f6768;
+                  background-color: white;
+                  border: 3px solid;
+                "
+                class="route-pill feeder-pill"
+              >
+                4
+              </div></a
+            ><a href="./map.html?route=fd09"
+              ><div
+                style="
+                  color: #836fff;
+                  background-color: white;
+                  border: 3px solid;
+                "
+                class="route-pill feeder-pill"
+              >
+                9
+              </div></a
+            >
+          </div>
+        </div>
+        <div id="stops-container">
+          <span class="material-icons"> school </span>
+        </div>
+      </div>
+    </div>
+    <div id="map-container">
+      <div id="map"></div>
+    </div>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/toastify-js"
+    ></script>
+    <script src="./halte.js"></script>
+  </body>
+</html>

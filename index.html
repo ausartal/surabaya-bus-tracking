@@ -1,0 +1,211 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- HTML Meta Tags -->
+    <title>Klacak | Lacak Bus Di Surabaya</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="./images/favicon-96x96.png"
+      sizes="96x96"
+    />
+    <link rel="icon" type="image/svg+xml" href="./images/favicon.svg" />
+    <link rel="shortcut icon" href="./images/favicon.ico" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="./images/apple-touch-icon.png"
+    />
+    <meta name="apple-mobile-web-app-title" content="Klacak" />
+    <link rel="manifest" href="./images/site.webmanifest" />
+    <meta
+      name="description"
+      content="Lacak Suroboyo Bus, Trans Semanggi, dan Feeder Wira-Wiri di Surabaya langsung dari web"
+    />
+
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://doublea4.github.io/busmapsby/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Klacak" />
+    <meta
+      property="og:description"
+      content="Lacak bus di kota Surabaya langsung dari web"
+    />
+    <meta
+      property="og:image"
+      content="https://raw.githubusercontent.com/DoubleA4/busmapsby/main/images/thumbnail.jpg"
+    />
+
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:domain" content="doublea4.github.io" />
+    <meta
+      property="twitter:url"
+      content="https://doublea4.github.io/busmapsby/"
+    />
+    <meta name="twitter:title" content="Klacak" />
+    <meta
+      name="twitter:description"
+      content="Lacak Posisi Bus Surabaya Langsung Di Web"
+    />
+    <meta
+      name="twitter:image"
+      content="https://raw.githubusercontent.com/DoubleA4/busmapsby/main/images/thumbnail.jpg"
+    />
+
+    <!-- Meta Tags Generated via https://www.opengraph.xyz -->
+    <meta
+      name="viewport"
+      content='width=device-width, ini
+    <script src="index.js"></script>
+    tial-scale=1'
+    />
+    <link rel="stylesheet" type="text/css" media="screen" href="index.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Sora:wght@100..800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  </head>
+
+  <body>
+    <!-- <div id="notifModal" class="modal">
+      Modal content
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="notif-content"></div>
+      </div>
+    </div> -->
+    <div id="page-container">
+      <div id="content-wrap">
+        <div id="routelist">
+          <div
+            id="notif"
+            class="routecontainer"
+            style="
+              height: auto;
+              margin: 0 auto;
+              background-color: rgba(240, 128, 128, 0.3);
+              border-color: red;
+              border-width: 3px;
+              border-style: solid;
+              display: none;
+            "
+          >
+            <div id="notif-content"></div>
+          </div>
+          <a href="https://forms.gle/a6MQMn3kvV7nxUCK9">
+            <div class="routecontainer" style="background-color: #8839ef">
+              <p
+                style="
+                  color: white;
+                  font-weight: 700;
+                  font-size: 2rem;
+                  text-align: center;
+                "
+              >
+                Survey Pengguna
+              </p>
+            </div>
+          </a>
+          <a href="./map.html?route=all">
+            <div
+              class="routecontainer"
+              style="background-color: var(--accent-color)"
+            >
+              <p
+                style="
+                  color: white;
+                  font-weight: 700;
+                  font-size: 2rem;
+                  text-align: center;
+                "
+              >
+                Semua Rute
+              </p>
+            </div>
+          </a>
+          <a
+            href="https://drive.google.com/drive/folders/1TeBbrXdcwJzNV7jmfRzWaXuD4LV-reuQ?usp=sharing"
+          >
+            <div class="routecontainer" style="background-color: #b81d1d">
+              <img
+                src="https://ugc.production.linktr.ee/mbe4bqT1eiH8v5MP2Fpg_4z1C3wWB4T1PQ71H?io=true&amp;size=avatar-v3_0"
+                style="height: 80%; margin: auto 0 auto"
+              />
+              <p
+                style="
+                  color: white;
+                  font-weight: 700;
+                  font-size: 2rem;
+                  text-align: center;
+                  margin-top: auto;
+                  margin-bottom: auto;
+                "
+              >
+                Peta Transum
+              </p>
+            </div>
+          </a>
+          <a href="./boyorailMap.html" style="display: none" id="funny-route">
+            <div class="routecontainer">
+              <div
+                style="
+                  color: white;
+                  background-color: #86c232;
+                  border: 2px solid #86c232;
+                  width: 1.3em;
+                  padding: 3px;
+                "
+                class="route-pill trunk-pill menu-pill"
+              >
+                BT
+              </div>
+              <p class="route-name">Kejawan - Lidah Kulon</p>
+              <p id="counter-bt" class="route-counter">
+                8 Kereta<br />24 Stasiun
+              </p>
+            </div>
+          </a>
+          <!-- <img
+            src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgwgTNETu58JMoNJG7w4AeDONUBAP5IawBLhFAkCWpblI8c7W6Jb8uVN2sltC7syNvQ-4h370-jryFjG7kw0Y7AoIkIEZS-uUyN0FpXtaEIjCttDfRXhBrqRW_4AMu18Z15w2mUlQdmQ0Xe/s800/ojigi_animal_neko.png"
+            style="
+              width: 200px;
+              display: block;
+              margin-left: auto;
+              margin-right: auto;
+            "
+          />
+          <p style="font-weight: 700; font-size: x-large; text-align: center">
+            Situs sedang dalam perbaikan
+          </p> -->
+        </div>
+      </div>
+      <footer id="footer">
+        <p>Made with ❤️ 🚌 🚐 🦈 🐊 by DoubleA4</p>
+        <a href="https://github.com/DoubleA4/busmapsby">
+          <i class="fa fa-github" style="font-size: 2rem"></i>
+        </a>
+        <a href="https://x.com/2times_a">
+          <i class="fa fa-twitter" style="font-size: 2rem"></i>
+        </a>
+        <a href="https://trakteer.id/doublea4">
+          <img src="images/trakteer-icon.png" style="height: 2rem" />
+        </a>
+      </footer>
+    </div>
+    <script src="index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,386 @@
+:root {
+  --accent-color: 6, 6, 70;
+  --accent-text: white;
+  --map-tiles-filter: invert(100%) hue-rotate(180deg) contrast(90%)
+    brightness(1.1) !important;
+  --background-color: white;
+  --text-color: black;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 20px;
+  border: transparent;
+}
+
+html,
+body {
+  font-family: "Noto Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+p {
+  margin: 0;
+}
+a {
+  text-decoration: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: #181a1b;
+    --text-color: white;
+  }
+  .map-tiles {
+    filter: var(--map-tiles-filter, none);
+  }
+
+  .leaflet-container {
+    background: var(--background-color) !important;
+  }
+}
+
+/* desktop */
+@media (min-width: 800px) {
+  #map {
+    margin-left: 408px;
+    margin-top: 0px;
+  }
+
+  #map.full-map {
+    margin: 0px;
+  }
+
+  .navbar {
+    max-width: 408px;
+  }
+  #route-panel {
+    max-width: 408px;
+  }
+  #route-items {
+    max-width: 408px;
+    margin-top: 50px;
+  }
+}
+
+/* mobile */
+@media (max-width: 800px) {
+  #map {
+    margin-top: 50px;
+    margin-bottom: 40vh;
+  }
+  #map.full-map {
+    margin: 0px;
+  }
+  #route-panel {
+    max-height: 40vh;
+  }
+  #route-items {
+    max-width: 100vw;
+  }
+  #location-button {
+    bottom: calc(40vh + 10px) !important;
+  }
+  #location-button.full-map {
+    bottom: 10px !important;
+  }
+}
+
+#map-container {
+  display: flex;
+  z-index: 1;
+  height: 100%;
+  width: 100%;
+}
+
+#map {
+  flex-grow: 1;
+  height: auto;
+  width: auto;
+}
+
+.navbar {
+  overflow: hidden;
+  z-index: 100000;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  width: 100%;
+  height: 50px;
+}
+
+.navbar-items {
+  padding: 10px 15px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.back-button {
+  color: var(--text-color);
+}
+
+#nav-title {
+  font-weight: 700;
+  font-size: large;
+  text-align: center;
+  flex-grow: 2;
+  min-width: 0;
+}
+
+#location-button {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+#route-panel {
+  z-index: 99999;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  display: flex;
+}
+
+#route-panel.full-map {
+  display: none;
+}
+
+#route-items {
+  flex-grow: 1;
+  height: auto;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+#route-info {
+  padding: 10px 15px;
+  background-color: rgb(var(--accent-color));
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#route-name {
+  font-weight: 700;
+  font-size: x-large;
+  color: white;
+  overflow: auto;
+  white-space: nowrap;
+}
+
+#stops-container .transit-list {
+  padding: 0.5em;
+  background-color: rgb(var(--accent-color));
+}
+
+#route-operation {
+  padding: 0.5em;
+  display: flex;
+  justify-content: space-around;
+  gap: 5px;
+  background-color: rgb(var(--accent-color));
+}
+
+.operation-box {
+  align-content: center;
+  text-align: center;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  padding: 0.5em;
+  flex-grow: 1;
+  border-radius: 5px;
+}
+
+.operation-box > p:last-child {
+  font-weight: 700;
+}
+
+#stops-container {
+  flex-grow: 1;
+  height: auto;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  position: relative;
+}
+
+.route-stop {
+  display: flex;
+  padding: 10px;
+  gap: 5px;
+  align-items: center;
+  max-height: 30px;
+}
+
+.stop-name {
+  font-weight: 700;
+  font-size: large;
+  flex-grow: 2;
+}
+
+.halte-circle {
+  background-color: rgb(var(--accent-color));
+  width: 20px;
+  height: 20px;
+  background-clip: padding-box;
+  border: rgba(var(--accent-color), 0.5) solid 5px;
+  border-radius: 100%;
+  flex-shrink: 0;
+}
+
+.route-pill {
+  width: 2em;
+  padding: 0px 3px;
+  text-align: center;
+  font-family: "Sora", sans-serif;
+  /* font-weight: 600; */
+  font-style: normal;
+}
+
+.trunk-pill {
+  border-radius: 0.1em;
+  font-weight: 800;
+}
+
+.feeder-pill {
+  border-radius: 1em;
+  font-weight: 700;
+}
+
+.halte-line {
+  position: absolute;
+  z-index: -2;
+  width: 10px;
+  margin-top: calc(7.5em + 16px);
+  margin-left: 20px;
+  background-color: rgba(var(--accent-color), 0.5);
+}
+
+.button {
+  cursor: pointer;
+}
+
+.leaflet-popup-tip,
+.leaflet-popup-content-wrapper {
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+}
+
+.leaflet-popup-content > p {
+  margin: 0px !important;
+}
+
+.halte-popup > div > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.transit-list {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.navigate {
+  width: 100%;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5px;
+  background-color: rgb(var(--accent-color));
+  color: var(--accent-text);
+  font-size: larger;
+  font-weight: 700;
+  border-radius: 25px;
+}
+
+.divMarker {
+  text-shadow: -2px 0 var(--text-color), 0 2px var(--text-color),
+    2px 0 var(--text-color), 0 -2px var(--text-color);
+}
+
+.bottom-line {
+  height: 5px;
+  width: auto;
+  border-radius: 5px 5px 0px 0px;
+}
+
+#route-select {
+  padding: 0 0.5em;
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+  background-color: rgb(var(--accent-color));
+  top: 0;
+  position: sticky;
+}
+
+.route-button {
+  align-content: center;
+  text-align: center;
+  color: var(--accent-text);
+  padding: 0.5em 0.5em 0 0.5em;
+  flex-grow: 1;
+}
+
+.route-button > p {
+  margin-bottom: 0.5em;
+  font-weight: 700;
+}
+
+.route-active > div {
+  background-color: var(--accent-text);
+}
+
+.material-icons {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+
+.poi-icon {
+  background-color: rgb(var(--accent-color));
+  border: 2px solid white;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
