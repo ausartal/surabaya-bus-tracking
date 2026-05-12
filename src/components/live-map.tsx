@@ -11,12 +11,37 @@ type LiveMapProps = {
   focusedBusId: string | null;
 };
 
-function routeBusIcon(color: string) {
+function routeBusIcon(color: string, isFocused: boolean = false) {
+  const size = isFocused ? 52 : 42;
+  const innerSize = isFocused ? 16 : 12;
+
   return new DivIcon({
     className: "",
-    html: `<div style="background:${color};width:42px;height:42px;border-radius:16px;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.95);box-shadow:0 18px 32px rgba(15,23,42,.28);transform:rotate(-8deg);"><div style="width:12px;height:12px;border-radius:999px;background:white;"></div></div>`,
-    iconSize: [42, 42],
-    iconAnchor: [21, 21],
+    html: `<div style="
+      background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%);
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.1);
+      position: relative;
+      transition: all 0.3s ease;
+    ">
+      <div style="
+        width: ${innerSize}px;
+        height: ${innerSize}px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+      "></div>
+      ${isFocused ? `<div style="position: absolute; width: ${size + 8}px; height: ${size + 8}px; border: 2px solid ${color}66; border-radius: 16px; animation: pulse 2s infinite;"></div>` : ""}
+    </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2 + 10)],
   });
 }
 
@@ -29,7 +54,23 @@ export function LiveMap({ routes, buses, selectedRouteId, focusedBusId }: LiveMa
     : { lat: -7.2892, lng: 112.7344 };
 
   return (
-    <MapContainer center={mapCenter} zoom={12.8} scrollWheelZoom className="h-full w-full rounded-[2rem]">
+    <MapContainer center={mapCenter} zoom={12.8} scrollWheelZoom className="h-full w-full rounded-2xl">
+      <style>{`
+        @keyframes pulse {
+          0% {
+            opacity: 0.5;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.3;
+          }
+          100% {
+            opacity: 0.5;
+            transform: scale(1.3);
+          }
+        }
+      `}</style>
+
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -40,8 +81,10 @@ export function LiveMap({ routes, buses, selectedRouteId, focusedBusId }: LiveMa
           <Polyline
             pathOptions={{
               color: route.color,
-              weight: selectedRouteId === route.id ? 7 : 5,
-              opacity: selectedRouteId === "all" ? 0.62 : 0.92,
+              weight: selectedRouteId === route.id ? 6 : 4,
+              opacity: selectedRouteId === "all" ? 0.5 : 0.8,
+              lineCap: "round",
+              lineJoin: "round",
             }}
             positions={route.path.map((point) => [point.lat, point.lng])}
           />
@@ -50,13 +93,37 @@ export function LiveMap({ routes, buses, selectedRouteId, focusedBusId }: LiveMa
               <CircleMarker
                 key={stop.id}
                 center={[stop.lat, stop.lng]}
-                radius={6}
-                pathOptions={{ color: "#0f172a", fillColor: "#ffffff", fillOpacity: 1, weight: 2 }}
+                radius={5}
+                pathOptions={{
+                  color: route.color,
+                  fillColor: "white",
+                  fillOpacity: 1,
+                  weight: 2.5,
+                }}
               >
-                <Popup>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-slate-900">{stop.name}</p>
-                    <p className="text-xs text-slate-500">{stop.routes.length} connected routes</p>
+                <Popup className="custom-popup">
+                  <div className="min-w-56 space-y-2 p-1">
+                    <div>
+                      <p className="font-semibold text-slate-900">{stop.name}</p>
+                      <p className="text-xs text-slate-500">{stop.routes.length} connected routes</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 px-3 py-2">
+                      <p className="text-xs font-medium text-slate-600">Routes serving this stop</p>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {stop.routes.map((routeId) => {
+                          const routeInfo = routes.find((r) => r.id === routeId);
+                          return (
+                            <span
+                              key={routeId}
+                              className="rounded px-2 py-0.5 text-xs font-medium text-white"
+                              style={{ backgroundColor: routeInfo?.color }}
+                            >
+                              {routeInfo?.shortName}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </Popup>
               </CircleMarker>
@@ -66,26 +133,45 @@ export function LiveMap({ routes, buses, selectedRouteId, focusedBusId }: LiveMa
 
       {visibleBuses.map((bus) => {
         const route = routes.find((routeItem) => routeItem.id === bus.routeId);
+        const isFocused = focusedBusId === bus.id;
+
         return (
           <Marker
             key={bus.id}
             position={[bus.lat, bus.lng]}
-            icon={routeBusIcon(route?.color ?? "#1D4ED8")}
-            zIndexOffset={focusedBusId === bus.id ? 600 : 300}
+            icon={routeBusIcon(route?.color ?? "#4f46e5", isFocused)}
+            zIndexOffset={isFocused ? 1000 : 300}
           >
-            <Popup>
-              <div className="min-w-56 space-y-2">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">{bus.routeName}</p>
-                  <p className="font-semibold text-slate-900">{bus.id}</p>
+            <Popup className="custom-popup">
+              <div className="min-w-64 space-y-3 p-2">
+                <div className="border-b border-slate-200 pb-2">
+                  <p className="text-xs uppercase tracking-wider font-medium text-slate-500">{bus.routeName}</p>
+                  <p className="mt-1 text-lg font-bold text-slate-900">{bus.id}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
-                  <p>Speed: {bus.speedKmh} km/h</p>
-                  <p>ETA: {bus.etaMinutes} min</p>
-                  <p>Status: {bus.status}</p>
-                  <p>Occupancy: {bus.occupancy}%</p>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-lg bg-slate-50 p-2">
+                    <p className="text-xs text-slate-500">Speed</p>
+                    <p className="mt-0.5 font-semibold text-slate-900">{bus.speedKmh} km/h</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 p-2">
+                    <p className="text-xs text-slate-500">ETA</p>
+                    <p className="mt-0.5 font-semibold text-slate-900">{bus.etaMinutes} min</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 p-2">
+                    <p className="text-xs text-slate-500">Status</p>
+                    <p className="mt-0.5 font-semibold text-slate-900 capitalize">{bus.status}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 p-2">
+                    <p className="text-xs text-slate-500">Occupancy</p>
+                    <p className="mt-0.5 font-semibold text-slate-900">{bus.occupancy}%</p>
+                  </div>
                 </div>
-                <p className="text-sm text-slate-700">Next stop: {bus.nextStop}</p>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                  <p className="text-xs text-slate-500">Next Stop</p>
+                  <p className="mt-1 font-semibold text-slate-900">{bus.nextStop}</p>
+                </div>
               </div>
             </Popup>
           </Marker>

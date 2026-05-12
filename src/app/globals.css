@@ -13,38 +13,150 @@ html {
 }
 
 body {
-  background:
-    radial-gradient(circle at top, rgba(14, 165, 233, 0.12), transparent 20%),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  @apply bg-white text-ink;
   font-family: var(--font-sans), sans-serif;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  @apply bg-slate-950 text-slate-100;
+}
+
+/* Typography Hierarchy */
 h1,
 h2,
 h3,
+h4,
+h5,
+h6,
 .font-display {
   font-family: var(--font-display), sans-serif;
+  @apply font-semibold;
 }
 
+h1 {
+  @apply text-4xl tracking-tight;
+}
+
+h2 {
+  @apply text-3xl tracking-tight;
+}
+
+h3 {
+  @apply text-xl tracking-tight;
+}
+
+/* Leaflet Customization */
 .leaflet-container {
   font-family: var(--font-sans), sans-serif;
-  background: #dbeafe;
+  @apply bg-slate-100 dark:bg-slate-800;
 }
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-  border-radius: 1rem;
+  @apply rounded-2xl shadow-float;
+  background: white !important;
 }
 
+html.dark .leaflet-popup-content-wrapper,
+html.dark .leaflet-popup-tip {
+  @apply bg-slate-800;
+}
+
+.leaflet-popup-content {
+  @apply font-sans text-sm;
+}
+
+.leaflet-control-attribution {
+  @apply text-xs opacity-60;
+}
+
+/* Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.5);
-  border-radius: 999px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-slate-300 dark:bg-slate-600;
+  &:hover {
+    @apply bg-slate-400 dark:bg-slate-500;
+  }
+}
+
+/* Utility Classes */
+.glass {
+  @apply rounded-3xl border border-white/10 bg-white/40 backdrop-blur-xl dark:border-white/5 dark:bg-slate-800/40;
+}
+
+.card {
+  @apply rounded-2xl border border-slate-200 bg-white shadow-card transition hover:shadow-hover dark:border-slate-700 dark:bg-slate-800;
+}
+
+.badge {
+  @apply inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium;
+}
+
+.badge-success {
+  @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400;
+}
+
+.badge-warning {
+  @apply bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
+}
+
+.badge-error {
+  @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400;
+}
+
+.badge-info {
+  @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400;
+}
+
+/* Live Indicator Animation */
+.live-indicator {
+  @apply inline-flex items-center gap-2;
+}
+
+.live-dot {
+  @apply h-2 w-2 rounded-full bg-emerald-500;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Focus States */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  @apply outline-none ring-2 ring-brand-500 ring-offset-2 dark:ring-offset-slate-950;
+}
+
+/* Input Styling */
+input,
+select,
+textarea {
+  @apply transition focus:border-brand-500;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  @apply border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-brand-400;
 }
