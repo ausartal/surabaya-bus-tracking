@@ -1,6 +1,6 @@
 "use client";
 
-import { Zap, AlertCircle, TrendingUp } from "@/components/icons";
+import { MapPinned, Activity, Sparkles } from "@/components/icons";
 import type { LiveBus } from "@/types/transit";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +57,7 @@ export function BusTrackerCard({ bus, isSelected = false, onSelect }: BusTracker
             bus.status === "active" ? "badge-success" : "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300",
           )}
         >
-          <TrendingUp className="mr-1 h-3 w-3" />
+          <Activity className="mr-1 h-3 w-3" />
           {bus.status}
         </div>
       </div>
@@ -124,7 +124,7 @@ export function BusTrackerCard({ bus, isSelected = false, onSelect }: BusTracker
       {/* Alert if needed */}
       {occupancyStatus === "full" && (
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 dark:border-red-900/30 dark:bg-red-900/20">
-          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400" />
+          <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400" />
           <p className="text-xs font-medium text-red-700 dark:text-red-400">Bus is at full capacity</p>
         </div>
       )}

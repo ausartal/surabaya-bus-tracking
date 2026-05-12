@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import { LocateFixed, Radar, Route, Search, Star, TimerReset, Wifi, MapPin, TrendingUp } from "@/components/icons";
+import { LocateFixed, Radar, Route, Search, Star, TimerReset, Wifi, MapPin } from "@/components/icons";
 import type { LiveSnapshot } from "@/types/transit";
 import { cn, formatNumber, formatTimeAgo } from "@/lib/utils";
 import { BusTrackerCard } from "./bus-tracker-card";

@@ -1,4 +1,4 @@
-import { Activity, Bus, ChartColumn, MapPinned, AlertCircle, TrendingUp, Zap, PencilLine, ShieldCheck } from "@/components/icons";
+import { Activity, Bus, ChartColumn, MapPinned, Sparkles, Radar, PencilLine, ShieldCheck, Radio } from "@/components/icons";
 import { getLiveSnapshot } from "@/lib/live-data";
 import { formatNumber } from "@/lib/utils";
 import { StatsCard } from "./stats-card";
@@ -98,7 +98,7 @@ export function AdminShell() {
                         </div>
                       </div>
                       <div className={`flex items-center gap-1.5 rounded-full bg-gradient-to-r ${demandColor} px-3 py-1.5`}>
-                        <TrendingUp className="h-3 w-3 text-white" />
+                        <Activity className="h-3 w-3 text-white" />
                         <span className="text-xs font-semibold text-white">#{index + 1}</span>
                       </div>
                     </div>
@@ -208,7 +208,7 @@ export function AdminShell() {
             {/* Quick Actions */}
             <div className="card p-6">
               <div className="mb-4 flex items-center gap-2">
-                <Zap className="h-5 w-5 text-brand-500" />
+                <Radar className="h-5 w-5 text-brand-500" />
                 <h3 className="font-bold text-ink dark:text-white">Quick Actions</h3>
               </div>
 
@@ -222,7 +222,7 @@ export function AdminShell() {
                   Assign Buses
                 </button>
                 <button className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-left text-sm font-medium text-ink dark:text-white transition hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-slate-700 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-brand-500" />
+                  <Sparkles className="h-4 w-4 text-brand-500" />
                   View Alerts
                 </button>
               </div>
