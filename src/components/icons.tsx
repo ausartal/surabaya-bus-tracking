@@ -140,6 +140,15 @@ export function ChartColumn(props: IconProps) {
   );
 }
 
+export function TrendingUp(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M3 17 9 11l4 4 8-8" />
+      <path d="M14 7h7v7" />
+    </BaseIcon>
+  );
+}
+
 export function PencilLine(props: IconProps) {
   return (
     <BaseIcon {...props}>

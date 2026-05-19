@@ -1,4 +1,4 @@
-import { Activity, Bus, ChartColumn, MapPinned, Sparkles, Radar, PencilLine, ShieldCheck, Radio } from "@/components/icons";
+import { Activity, Bus, ChartColumn, MapPinned, Sparkles, Radar, PencilLine, ShieldCheck, Radio, TrendingUp } from "@/components/icons";
 import { getLiveSnapshot } from "@/lib/live-data";
 import { formatNumber } from "@/lib/utils";
 import { StatsCard } from "./stats-card";
