@@ -105,12 +105,12 @@ function updateFollowBadge() {
   }
 }
 
-function updateUserTrackBadge(active) {
+function updateUserTrackBadge(active, coordsText) {
   const badge = document.getElementById("user-track-badge");
   const btn = document.getElementById("location-button");
   if (!badge || !btn) return;
   if (active) {
-    badge.textContent = "Tracking: On";
+    badge.textContent = coordsText ? `Tracking: ${coordsText}` : "Tracking: On";
     badge.classList.remove("hidden");
     btn.classList.add("active");
   } else {
@@ -444,43 +444,27 @@ async function setVehicleMarker(route, URL) {
     pill = `<a href='./map.html?route=${route.link}'><div style='color: ${route.text}; background-color: ${route.color}; border: 2px solid ${route.color}' class='route-pill trunk-pill'>${route.name}</div></a>`;
   }
 
-  // create bus icon using inline SVG for better visuals; accepts color
-// get bus icon: prefer uploaded SVG at /assets/bus-logo.svg, fallback to inline SVG colored by route
-async function getBusIcon(color) {
-  // cache per color
-  if (getBusIcon.cache && getBusIcon.cacheColor === color) return getBusIcon.cache;
-  try {
-    const res = await fetch('/images/bus-front.svg');
-    if (res.ok) {
-      let svg = await res.text();
-      // strip xml/doctypes
-      svg = svg.replace(/<\?xml[^>]*\?>/g, '').replace(/<!DOCTYPE[^>]*>/g, '');
-      // ensure size
-      if (/width=/.test(svg)) svg = svg.replace(/width="[^"]*"/i, 'width="36"');
-      else svg = svg.replace(/<svg/, '<svg width="36"');
-      if (/height=/.test(svg)) svg = svg.replace(/height="[^"]*"/i, 'height="36"');
-      else svg = svg.replace(/<svg/, '<svg height="36"');
-      // replace common fills/strokes with route color
-      svg = svg.replace(/fill="#[^\"]*"/gi, `fill="${color}"`);
-      svg = svg.replace(/stroke="#[^\"]*"/gi, `stroke="${color}"`);
-      // if no explicit fills, set root fill style
-      if (!/fill=/.test(svg)) svg = svg.replace(/<svg([^>]*)>/, `<svg$1 style="fill:${color}">`);
-      const html = `<div class='bus-icon'>${svg}</div>`;
-      const icon = L.divIcon({ iconAnchor: [18, 18], html: html, className: 'divMarker' });
-      getBusIcon.cache = icon;
-      getBusIcon.cacheColor = color;
-      return icon;
+  // get bus icon: use provided bus-front.svg, fallback to inline SVG if missing
+  async function getBusIcon(color) {
+    if (getBusIcon.logoIcon) return getBusIcon.logoIcon;
+    if (getBusIcon.cache && getBusIcon.cacheColor === color) return getBusIcon.cache;
+    try {
+      const res = await fetch("/images/bus-front.svg", { method: "HEAD" });
+      if (res.ok) {
+        const html = `<img src="/images/bus-front.svg" width="36" height="36" alt="bus icon" />`;
+        const icon = L.divIcon({ iconAnchor: [18, 18], html: `<div class='bus-icon'>${html}</div>`, className: "divMarker" });
+        getBusIcon.logoIcon = icon;
+        return icon;
+      }
+    } catch (e) {
+      // ignore, fallback to inline SVG below
     }
-  } catch (e) {
-    // ignore, fallback to inline SVG below
+    const inline = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="36" height="36" role="img" aria-label="Bus icon"><rect x="2" y="5" width="20" height="12" rx="2" fill="${color}" stroke="#ffffff" stroke-width="1.5"/><rect x="4" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/><rect x="11" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/><circle cx="7" cy="18" r="1.6" fill="#333333"/><circle cx="17" cy="18" r="1.6" fill="#333333"/></svg>`;
+    const icon = L.divIcon({ iconAnchor: [18, 18], html: `<div class='bus-icon'>${inline}</div>`, className: "divMarker" });
+    getBusIcon.cache = icon;
+    getBusIcon.cacheColor = color;
+    return icon;
   }
-  // fallback inline SVG
-  const inline = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="36" height="36" role="img" aria-label="Bus icon"><rect x="2" y="5" width="20" height="12" rx="2" fill="${color}" stroke="#ffffff" stroke-width="1.5"/><rect x="4" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/><rect x="11" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/><circle cx="7" cy="18" r="1.6" fill="#333333"/><circle cx="17" cy="18" r="1.6" fill="#333333"/></svg>`;
-  const icon = L.divIcon({ iconAnchor: [18, 18], html: `<div class='bus-icon'>${inline}</div>`, className: 'divMarker' });
-  getBusIcon.cache = icon;
-  getBusIcon.cacheColor = color;
-  return icon;
-}
 
   if (routeParams != "all" && route.code != 3) {
     $("#op-detail").text(
@@ -727,10 +711,13 @@ function showPosition(position) {
   };
 
   const latlng = [position.coords.latitude, position.coords.longitude];
+  const coordText = `${latlng[0].toFixed(5)}, ${latlng[1].toFixed(5)}`;
   if (!markers.gps) {
     markers.gps = L.circleMarker(latlng, markerOption).addTo(map);
+    markers.gps.bindPopup(`Posisi kamu: ${coordText}`);
   } else {
     markers.gps.setLatLng(latlng);
+    markers.gps.setPopupContent(`Posisi kamu: ${coordText}`);
   }
 
   if (!userTrack.accuracy) {
@@ -760,7 +747,7 @@ function showPosition(position) {
     map.setView(latlng, 17);
     userTrack.hasCentered = true;
   }
-  updateUserTrackBadge(true);
+  updateUserTrackBadge(true, coordText);
 }
 
 function showError(error) {
