@@ -262,18 +262,41 @@ async function setVehicleMarker(route, URL) {
   }
 
   // create bus icon using inline SVG for better visuals; accepts color
-  const busIcon = (color) =>
+// get bus icon: prefer uploaded SVG at /assets/bus-logo.svg, fallback to inline SVG colored by route
+async function getBusIcon(color) {
+  if (getBusIcon.checked) return getBusIcon.cached(color);
+  getBusIcon.checked = true;
+  try {
+    const res = await fetch('/assets/bus-logo.svg', { method: 'HEAD' });
+    if (res.ok) {
+      getBusIcon.logoExists = true;
+      getBusIcon.cached = (c) =>
+        L.divIcon({
+          iconAnchor: [14, 14],
+          html: `<img src="/assets/bus-logo.svg" width="28" height="28" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35))" alt="bus logo"/>`,
+          className: 'divMarker bus-icon',
+        });
+      return getBusIcon.cached(color);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  // fallback: inline SVG colored
+  getBusIcon.logoExists = false;
+  getBusIcon.cached = (c) =>
     L.divIcon({
       iconAnchor: [12, 12],
       html: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" role="img" aria-label="Bus icon">
-        <rect x="2" y="5" width="20" height="12" rx="2" fill="${route.color}" stroke="#ffffff" stroke-width="1.5"/>
+        <rect x="2" y="5" width="20" height="12" rx="2" fill="${c}" stroke="#ffffff" stroke-width="1.5"/>
         <rect x="4" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
         <rect x="11" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
         <circle cx="7" cy="18" r="1.6" fill="#333333"/>
         <circle cx="17" cy="18" r="1.6" fill="#333333"/>
       </svg>`,
-      className: "divMarker bus-icon",
+      className: 'divMarker bus-icon',
     });
+  return getBusIcon.cached(color);
+}
 
   if (routeParams != "all" && route.code != 3) {
     $("#op-detail").text(
@@ -285,30 +308,66 @@ async function setVehicleMarker(route, URL) {
 
   if (!markers[route.code]) {
     var vecMarkers = {};
-    data.forEach((vehicle) => {
-      vecMarkers[vehicle.info] = L.marker([vehicle.lat, vehicle.lng], {
-        icon: busIcon(route.color),
-        rotationAngle: vehicle.direction,
-      })
-        .addTo(map)
-        .bindPopup(
-          `${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}`
-        );
+  const protoIcon = await getBusIcon(route.color);
+  for (const vehicle of data) {
+    const popupHtml = `${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`;
+    vecMarkers[vehicle.info] = L.marker([vehicle.lat, vehicle.lng], {
+      icon: protoIcon,
+      rotationAngle: vehicle.direction,
+    })
+      .addTo(map)
+      .bindPopup(popupHtml);
+      
+    // attach click handler for opening side panel from the marker itself
+    vecMarkers[vehicle.info].on('click', function () {
+      openSidePanel(vehicle.info, vehicle.lat, vehicle.lng, vehicle);
     });
+  }
     markers[route.code] = vecMarkers;
+
+  // ensure side panel DOM exists
+  if (!document.getElementById('side-panel')) {
+    const sp = document.createElement('div');
+    sp.id = 'side-panel';
+    sp.innerHTML = `<div class="panel-header"><span class="close" onclick="closeSidePanel()">×</span><h3 id="panel-title">Detail Kendaraan</h3></div><div id="panel-body">Pilih kendaraan untuk melihat detail.</div>`;
+    document.body.appendChild(sp);
+  }
   } else {
-    data.forEach((vehicle) => {
+  const protoIcon = await getBusIcon(route.color);
+  for (const vehicle of data) {
+    if (markers[route.code][vehicle.info]) {
       markers[route.code][vehicle.info]
         .setRotationAngle(vehicle.direction)
         .setLatLng([vehicle.lat, vehicle.lng])
-        .bindPopup(
-          `${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}`
-        );
-    });
+        .bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`);
+    } else {
+      const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction })
+        .addTo(map)
+        .bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`);
+      markers[route.code][vehicle.info] = m;
+    }
+  }
   }
   setTimeout(() => {
     setVehicleMarker(route, URL);
   }, 5000);
+
+  // side panel helpers
+  window.openSidePanel = function (id, lat, lon, vehicle) {
+    const panel = document.getElementById('side-panel');
+    if (!panel) return;
+    panel.classList.add('open');
+    document.getElementById('panel-title').innerText = 'Kendaraan ' + id;
+    const body = document.getElementById('panel-body');
+    body.innerHTML = `<p><strong>ID:</strong> ${id}</p><p><strong>Lokasi:</strong> ${lat.toFixed(5)}, ${lon.toFixed(5)}</p><p><strong>Rute:</strong> ${route.name || ''}</p><p><strong>Kecepatan:</strong> ${vehicle && vehicle.speed ? vehicle.speed : '-'}</p><p><strong>Arah:</strong> ${vehicle && vehicle.direction ? vehicle.direction : '-'}</p>`;
+    // center map on marker
+    map.setView([lat, lon], Math.max(map.getZoom(), 16));
+  };
+  window.closeSidePanel = function () {
+    const panel = document.getElementById('side-panel');
+    if (!panel) return;
+    panel.classList.remove('open');
+  };
 }
 
 // hide and show markers on zoom changes

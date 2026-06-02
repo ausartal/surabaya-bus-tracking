@@ -240,35 +240,63 @@ setStopList(boyorail);
 
 const pill = `<div style='color: ${boyorail.text}; background-color: ${boyorail.color}; border: 2px solid ${boyorail.color}; width: 1.3em;' class='route-pill trunk-pill'>${boyorail.name}</div>`;
 
-// create bus icon using inline SVG
-const busIcon = (color) =>
-  L.divIcon({
-    iconAnchor: [12, 12],
-    html: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" role="img" aria-label="Bus icon">
-      <rect x="2" y="5" width="20" height="12" rx="2" fill="${color}" stroke="#ffffff" stroke-width="1.5"/>
-      <rect x="4" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
-      <rect x="11" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
-      <circle cx="7" cy="18" r="1.6" fill="#333333"/>
-      <circle cx="17" cy="18" r="1.6" fill="#333333"/>
-    </svg>`,
-    className: "divMarker bus-icon",
-  });
+// get bus icon for boyorail map (prefer uploaded SVG)
+async function getBusIconBoy(color) {
+  if (getBusIconBoy.checked) return getBusIconBoy.cached(color);
+  getBusIconBoy.checked = true;
+  try {
+    const res = await fetch('/assets/bus-logo.svg', { method: 'HEAD' });
+    if (res.ok) {
+      getBusIconBoy.logoExists = true;
+      getBusIconBoy.cached = (c) =>
+        L.divIcon({
+          iconAnchor: [14, 14],
+          html: `<img src="/assets/bus-logo.svg" width="28" height="28" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35))" alt="bus logo"/>`,
+          className: 'divMarker bus-icon',
+        });
+      return getBusIconBoy.cached(color);
+    }
+  } catch (e) {}
+  getBusIconBoy.logoExists = false;
+  getBusIconBoy.cached = (c) =>
+    L.divIcon({
+      iconAnchor: [12, 12],
+      html: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" role="img" aria-label="Bus icon">
+        <rect x="2" y="5" width="20" height="12" rx="2" fill="${c}" stroke="#ffffff" stroke-width="1.5"/>
+        <rect x="4" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
+        <rect x="11" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
+        <circle cx="7" cy="18" r="1.6" fill="#333333"/>
+        <circle cx="17" cy="18" r="1.6" fill="#333333"/>
+      </svg>`,
+      className: 'divMarker bus-icon',
+    });
+  return getBusIconBoy.cached(color);
+}
 
 var vecMarkers = {};
 vehicles.forEach((vehicle) => {
+  // use async icon loader
+  const protoIcon = await getBusIconBoy(routeColor);
   vecMarkers[vehicle.properties.info] = L.marker(
-    [vehicle.geometry.coordinates[1], vehicle.geometry.coordinates[0]],
-    {
-    icon: busIcon(routeColor),
-      rotationAngle: vehicle.properties.direction,
-    },
+  [vehicle.geometry.coordinates[1], vehicle.geometry.coordinates[0]],
+  {
+    icon: protoIcon,
+    rotationAngle: vehicle.properties.direction,
+  },
   )
-    .addTo(map)
-    .bindPopup(
-      `${pill}<b>${vehicle.properties.info}</b><br><b>Kecepatan :</b> ${vehicle.properties.speed}`,
-    );
+  .addTo(map)
+  .bindPopup(
+    `${pill}<b>${vehicle.properties.info}</b><br><b>Kecepatan :</b> ${vehicle.properties.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.properties.info}', ${vehicle.geometry.coordinates[1]}, ${vehicle.geometry.coordinates[0]})">Details</button></div>`,
+  );
 });
 markers[boyorail.name] = vecMarkers;
+
+  if (!document.getElementById('side-panel')) {
+const sp = document.createElement('div');
+sp.id = 'side-panel';
+sp.innerHTML = `<div class="panel-header"><span class="close" onclick="closeSidePanel()">×</span><h3 id="panel-title">Detail Kendaraan</h3></div><div id="panel-body">Pilih kendaraan untuk melihat detail.</div>`;
+document.body.appendChild(sp);
+  }
 
 $("#op-detail").text(
   `${vehicles.length} Kereta | ${boyorail.datahalte.length} Stasiun`,

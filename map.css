@@ -339,9 +339,9 @@ a {
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 
-.bus-icon svg {
-  width: 24px;
-  height: 24px;
+.bus-icon svg, .bus-icon img {
+  width: 28px;
+  height: 28px;
   display: block;
 }
 
@@ -356,6 +356,25 @@ a {
   font-size: 0.85rem;
 }
 
+/* side panel for vehicle details */
+#side-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  width: 320px;
+  background: #fff;
+  box-shadow: -8px 0 24px rgba(0,0,0,0.12);
+  transform: translateX(100%);
+  transition: transform 260ms ease;
+  z-index: 9999;
+  padding: 1rem;
+  overflow-y: auto;
+}
+#side-panel.open { transform: translateX(0); }
+#side-panel .close { cursor: pointer; font-weight:700; }
+.popup-actions { margin-top:8px; }
+.details-btn { background: var(--accent-color); color: var(--accent-text); border: none; padding: 6px 10px; border-radius: 8px; cursor:pointer; }
 
 .bottom-line {
   height: 5px;

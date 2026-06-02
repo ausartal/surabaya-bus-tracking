@@ -1,0 +1,8 @@
+/* minimal styles for terminal page */
+body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; }
+.topbar { background: #ffffff; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); display:flex; gap:1rem; align-items:center }
+.container { padding: 1rem; }
+ul { list-style:none; padding:0; }
+li { padding: 0.75rem; border-bottom: 1px solid #eee; }
+.muted { color: #666; font-size: 0.9rem; }
+a { color: var(--accent-color); text-decoration:none; }
