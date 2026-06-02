@@ -74,6 +74,95 @@ const dataRute = getData("./routedata.json");
 const dataTracking = getData("https://busmapapi.fly.dev/all");
 
 var route;
+const trackerState = {
+  routeFilter: "all",
+  query: "",
+  mapFocus: false,
+};
+let lastHighlight = null;
+
+function updateLiveStatus(ts) {
+  const el = document.getElementById("live-status");
+  if (!el) return;
+  const timeStr = ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  el.textContent = `Live: ${timeStr}`;
+}
+
+function updateFollowBadge() {
+  const badge = document.getElementById("follow-badge");
+  if (!badge) return;
+  if (window.following) {
+    badge.textContent = `Following: ${window.following}`;
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+function updateEmptyState(count) {
+  const empty = document.getElementById("empty-state");
+  if (!empty) return;
+  if (routeParams !== "all" && count === 0) empty.classList.remove("hidden");
+  else empty.classList.add("hidden");
+}
+
+function getSpeedOpacity(speed) {
+  const s = Number(speed) || 0;
+  if (s <= 5) return 0.55;
+  if (s <= 15) return 0.7;
+  if (s <= 30) return 0.85;
+  return 1;
+}
+
+function applyRouteFilter() {
+  const filter = trackerState.routeFilter;
+  Object.keys(markers.clusters).forEach((code) => {
+    const group = markers.clusters[code];
+    if (!group) return;
+    if (filter === "all" || String(code) === String(filter)) {
+      if (!map.hasLayer(group)) map.addLayer(group);
+    } else if (map.hasLayer(group)) {
+      map.removeLayer(group);
+    }
+  });
+}
+
+function focusOnBus(busId) {
+  if (!busId) return;
+  for (const r in markers) {
+    if (!markers[r]) continue;
+    const m = markers[r][busId];
+    if (m) {
+      if (lastHighlight && lastHighlight._icon) {
+        lastHighlight._icon.classList.remove("bus-highlight");
+      }
+      if (m._icon) m._icon.classList.add("bus-highlight");
+      lastHighlight = m;
+      map.setView(m.getLatLng(), Math.max(map.getZoom(), 16));
+      try { m.openPopup(); } catch (e) {}
+      openSidePanel(busId, m.getLatLng().lat, m.getLatLng().lng, m.vehicleData);
+      return;
+    }
+  }
+  Toastify({ text: `Bus ${busId} tidak ditemukan`, duration: 2500 }).showToast();
+}
+
+function buildPopupHtml(vehicle, pill) {
+  const lastSeen = vehicle.timestamp ? new Date(vehicle.timestamp) : new Date();
+  const timeStr = lastSeen.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return `
+    <div class="popup-brief">
+      <img src="/images/bus-front.svg" alt="bus" width="28" height="28" />
+      <div class="popup-info">
+        ${pill}<div><strong>${vehicle.info}</strong></div>
+        <div class="muted">Kecepatan: ${vehicle.speed || "-"} | ${timeStr}</div>
+      </div>
+    </div>
+    <div class='popup-actions'>
+      <button class='action-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng}, ${JSON.stringify(vehicle).replace(/'/g,"\\'")})">Details</button>
+      <a class='action-btn' href="https://maps.google.com?saddr=Current+Location&daddr=${vehicle.lat},${vehicle.lng}" target="_blank">Navigate</a>
+    </div>`;
+}
 
 // setting route information and themes
 if (routeParams != "all") {
@@ -108,6 +197,72 @@ if (routeParams != "all") {
       setRoute(route);
       setVehicleMarker(route, dataTracking[route.code]);
     });
+}
+
+function initTrackerUI() {
+  if (window._trackerInit) return;
+  window._trackerInit = true;
+
+  const routeFilter = document.getElementById("route-filter");
+  const searchInput = document.getElementById("bus-search");
+  const focusBtn = document.getElementById("focus-toggle");
+
+  if (routeFilter) {
+    Object.keys(dataRute).forEach((key) => {
+      const opt = document.createElement("option");
+      opt.value = dataRute[key].code;
+      opt.textContent = `${dataRute[key].name} - ${dataRute[key].title}`;
+      routeFilter.appendChild(opt);
+    });
+    if (routeParams && routeParams !== "all" && dataRute[routeParams]) {
+      trackerState.routeFilter = String(dataRute[routeParams].code);
+      routeFilter.value = trackerState.routeFilter;
+    }
+    routeFilter.addEventListener("change", function () {
+      trackerState.routeFilter = routeFilter.value;
+      applyRouteFilter();
+    });
+  }
+
+  if (searchInput) {
+    let searchTimer;
+    searchInput.addEventListener("input", function () {
+      const val = searchInput.value.trim();
+      trackerState.query = val;
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        if (val.length > 0) focusOnBus(val);
+      }, 300);
+    });
+    searchInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        focusOnBus(searchInput.value.trim());
+      }
+    });
+  }
+
+  if (focusBtn) {
+    focusBtn.addEventListener("click", function () {
+      trackerState.mapFocus = !trackerState.mapFocus;
+      focusBtn.classList.toggle("active", trackerState.mapFocus);
+      if (trackerState.mapFocus) {
+        if (map.hasLayer(halteMarkersGroup)) map.removeLayer(halteMarkersGroup);
+        if (map.hasLayer(routeLinesGroup)) map.removeLayer(routeLinesGroup);
+      } else {
+        if (!map.hasLayer(halteMarkersGroup)) map.addLayer(halteMarkersGroup);
+        if (!map.hasLayer(routeLinesGroup)) map.addLayer(routeLinesGroup);
+      }
+    });
+  }
+  updateFollowBadge();
+  applyRouteFilter();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initTrackerUI);
+} else {
+  initTrackerUI();
 }
 
 function setRoute(route) {
@@ -259,6 +414,8 @@ async function setVehicleMarker(route, URL) {
     options
   );
   const data = await response.json();
+  updateLiveStatus(new Date());
+  updateEmptyState(data.length);
 
   let pill;
   if (route.feeder) {
@@ -349,10 +506,20 @@ async function getBusIcon(color) {
       for (const vehicle of vehicles) {
         seen[vehicle.info] = true;
         if (existing[vehicle.info]) {
-          try { existing[vehicle.info].setLatLng([vehicle.lat, vehicle.lng]); existing[vehicle.info].setRotationAngle(vehicle.direction||0); existing[vehicle.info].bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}`); } catch (e) {}
+          try {
+            existing[vehicle.info]
+              .setLatLng([vehicle.lat, vehicle.lng])
+              .setRotationAngle(vehicle.direction || 0)
+              .setOpacity(getSpeedOpacity(vehicle.speed))
+              .bindPopup(buildPopupHtml(vehicle, pill));
+            existing[vehicle.info].vehicleData = vehicle;
+          } catch (e) {}
         } else {
-          const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction, routeColor: r.color });
+          const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction, routeColor: r.color })
+            .bindPopup(buildPopupHtml(vehicle, pill));
           m.routeColor = r.color;
+          m.vehicleData = vehicle;
+          m.setOpacity(getSpeedOpacity(vehicle.speed));
           m.on('click', function () { openSidePanel(vehicle.info, vehicle.lat, vehicle.lng, vehicle); });
           markers.clusters[r.code].addLayer(m);
           markers[r.code][vehicle.info] = m;
@@ -361,6 +528,7 @@ async function getBusIcon(color) {
       // remove stale markers
       Object.keys(existing).forEach(k => { if (!seen[k]) { try { markers.clusters[r.code].removeLayer(existing[k]); } catch (e){} delete markers[r.code][k]; }});
     }
+    applyRouteFilter();
   }, 350);
   setTimeout(() => {
     setVehicleMarker(route, URL);
@@ -395,13 +563,14 @@ async function getBusIcon(color) {
       <div class="panel-actions">
         <a class="action-btn" href="https://maps.google.com?saddr=Current+Location&daddr=${lat},${lon}" target="_blank">Navigasi</a>
         <button class="action-btn" onclick="map.setView([${lat}, ${lon}], 17)">Center</button>
-        <button class="action-btn" id="follow-btn" onclick="(function(b){b.classList.toggle('active'); window.following = window.following === '${id}' ? null : '${id}';})(document.getElementById('follow-btn'))">Follow</button>
+        <button class="action-btn" id="follow-btn" onclick="(function(b){b.classList.toggle('active'); window.following = window.following === '${id}' ? null : '${id}'; updateFollowBadge();})(document.getElementById('follow-btn'))">Follow</button>
         <button class="action-btn" onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?route=' + (route.link || 'all') + '&lat=${lat}&lon=${lon}');">Copy Link</button>
       </div>
     `;
     // update follow button state
     const fb = document.getElementById('follow-btn');
     if (fb) fb.classList.toggle('active', window.following === id);
+    updateFollowBadge();
     // center map on marker
     map.setView([lat, lon], Math.max(map.getZoom(), 16));
   };
@@ -421,8 +590,8 @@ async function getBusIcon(color) {
     if (locateBtn) locateBtn.addEventListener('click', getLocation);
     if (termBtn) termBtn.addEventListener('click', function () { window.location = 'terminal.html'; });
     if (followBtn) followBtn.addEventListener('click', function () {
-      if (window.following) { window.following = null; followBtn.classList.remove('active'); Toastify({ text: 'Stopped following', duration: 2000 }).showToast(); }
-      else if (window.lastSelected) { window.following = window.lastSelected; followBtn.classList.add('active'); Toastify({ text: 'Following ' + window.following, duration: 2000 }).showToast(); }
+      if (window.following) { window.following = null; followBtn.classList.remove('active'); updateFollowBadge(); Toastify({ text: 'Stopped following', duration: 2000 }).showToast(); }
+      else if (window.lastSelected) { window.following = window.lastSelected; followBtn.classList.add('active'); updateFollowBadge(); Toastify({ text: 'Following ' + window.following, duration: 2000 }).showToast(); }
       else { Toastify({ text: 'Pilih kendaraan dulu (tap marker)', duration: 2500 }).showToast(); }
     });
     if (layersBtn) layersBtn.addEventListener('click', function () {
@@ -467,6 +636,10 @@ if (map.getZoom() > markerZoom) {
 }
 
 map.on("zoomend", function () {
+  if (trackerState.mapFocus) {
+    if (map.hasLayer(halteMarkersGroup)) map.removeLayer(halteMarkersGroup);
+    return;
+  }
   if (map.getZoom() < markerZoom) {
     map.removeLayer(halteMarkersGroup);
   } else {

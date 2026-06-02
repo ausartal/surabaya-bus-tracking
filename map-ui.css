@@ -61,3 +61,13 @@ body{font-family: 'Noto Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Ari
 /* ensure popups and panel have subtle transitions */
 .leaflet-popup { transition: transform 160ms ease, opacity 160ms ease; }
 #side-panel { transition: transform 260ms cubic-bezier(.2,.9,.3,1), opacity 160ms ease; }
+
+/* tracker controls refinements (desktop) */
+.tracker-controls { border-radius: 10px; }
+.tracker-controls input[type="search"] { font-size: 0.95rem; }
+.control-row select { font-weight: 700; }
+.control-row .control-btn { font-weight: 700; }
+.tracker-status { top: 76px; }
+
+/* search highlight */
+.bus-highlight { outline: 3px solid rgba(0,0,0,0.2); }

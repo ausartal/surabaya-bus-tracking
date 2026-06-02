@@ -76,11 +76,24 @@
     <div id="location-button" class="button" onclick="getLocation()">
       <span class="material-icons"> my_location </span>
     </div>
+    <div id="tracker-status" class="tracker-status">
+      <div id="live-status" class="status-pill">Live: --</div>
+      <div id="follow-badge" class="status-pill hidden">Following: -</div>
+    </div>
     <div id="route-panel">
       <div id="route-items">
         <div id="expand-panel"></div>
         <div id="route-info">
           <div id="route-name">nama rute</div>
+        </div>
+        <div id="tracker-controls" class="tracker-controls">
+          <input id="bus-search" type="search" placeholder="Cari ID bus..." />
+          <div class="control-row">
+            <select id="route-filter">
+              <option value="all">Semua Rute</option>
+            </select>
+            <button id="focus-toggle" class="control-btn">Map Focus</button>
+          </div>
         </div>
         <div id="stops-container">
           <div class="halte-line"></div>
@@ -93,6 +106,9 @@
               <p>Detail rute</p>
               <p id="op-detail">Loading...</p>
             </div>
+          </div>
+          <div id="empty-state" class="empty-state hidden">
+            Tidak ada bus aktif di rute ini.
           </div>
           <div id="route-select">
             <div
