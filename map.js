@@ -385,6 +385,7 @@ async function getBusIcon(color) {
   window.openSidePanel = function (id, lat, lon, vehicle) {
     const panel = document.getElementById('side-panel');
     if (!panel) return;
+    window.lastSelected = id;
     // if mobile, show as bottom sheet
     if (window.innerWidth <= 600) panel.classList.add('bottom');
     panel.classList.add('open');
@@ -413,6 +414,9 @@ async function getBusIcon(color) {
         <button class="action-btn" onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?route=' + (route.link || 'all') + '&lat=${lat}&lon=${lon}');">Copy Link</button>
       </div>
     `;
+    // update follow button state
+    const fb = document.getElementById('follow-btn');
+    if (fb) fb.classList.toggle('active', window.following === id);
     // center map on marker
     map.setView([lat, lon], Math.max(map.getZoom(), 16));
   };
@@ -422,6 +426,54 @@ async function getBusIcon(color) {
     panel.classList.remove('open');
     panel.classList.remove('bottom');
   };
+
+  // bottom-controls interactivity
+  document.addEventListener('DOMContentLoaded', function () {
+    const locateBtn = document.getElementById('btn-locate');
+    const layersBtn = document.getElementById('btn-layers');
+    const termBtn = document.getElementById('btn-terminals');
+    const followBtn = document.getElementById('btn-follow');
+    if (locateBtn) locateBtn.addEventListener('click', getLocation);
+    if (termBtn) termBtn.addEventListener('click', function () { window.location = 'terminal.html'; });
+    if (followBtn) followBtn.addEventListener('click', function () {
+      if (window.following) { window.following = null; followBtn.classList.remove('active'); Toastify({ text: 'Stopped following', duration: 2000 }).showToast(); }
+      else if (window.lastSelected) { window.following = window.lastSelected; followBtn.classList.add('active'); Toastify({ text: 'Following ' + window.following, duration: 2000 }).showToast(); }
+      else { Toastify({ text: 'Pilih kendaraan dulu (tap marker)', duration: 2500 }).showToast(); }
+    });
+    if (layersBtn) layersBtn.addEventListener('click', function () {
+      // toggle halte layer visibility
+      if (map.hasLayer(halteMarkersGroup)) {
+        map.removeLayer(halteMarkersGroup);
+        layersBtn.classList.remove('active');
+      } else {
+        map.addLayer(halteMarkersGroup);
+        layersBtn.classList.add('active');
+      }
+    });
+
+    // swipe-to-close for side-panel (mobile)
+    const panel = document.getElementById('side-panel');
+    if (panel) {
+      let startY = 0; let currentY = 0; let touching = false;
+      panel.addEventListener('touchstart', function (e) { startY = e.touches[0].clientY; touching = true; });
+      panel.addEventListener('touchmove', function (e) { if (!touching) return; currentY = e.touches[0].clientY; const dy = currentY - startY; if (dy > 0 && panel.classList.contains('bottom')) { panel.style.transform = `translateY(${dy}px)`; } });
+      panel.addEventListener('touchend', function (e) { touching = false; const dy = currentY - startY; panel.style.transform = ''; if (dy > 80 && panel.classList.contains('bottom')) closeSidePanel(); });
+    }
+
+    // follow mode auto-center loop: center if following id found
+    setInterval(function () {
+      if (window.following) {
+        // search markers for id
+        for (const r in markers) {
+          if (!markers[r]) continue;
+          if (markers[r][window.following]) {
+            try { map.setView(markers[r][window.following].getLatLng(), Math.max(map.getZoom(), 16)); } catch (e) {}
+            break;
+          }
+        }
+      }
+    }, 2500);
+  });
 }
 
 // hide and show markers on zoom changes
