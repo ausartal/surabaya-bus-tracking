@@ -242,35 +242,31 @@ const pill = `<div style='color: ${boyorail.text}; background-color: ${boyorail.
 
 // get bus icon for boyorail map (prefer uploaded SVG)
 async function getBusIconBoy(color) {
-  if (getBusIconBoy.checked) return getBusIconBoy.cached(color);
-  getBusIconBoy.checked = true;
+  if (getBusIconBoy.cache && getBusIconBoy.cacheColor === color) return getBusIconBoy.cache;
   try {
-    const res = await fetch('/images/bus-front.svg', { method: 'HEAD' });
+    const res = await fetch('/images/bus-front.svg');
     if (res.ok) {
-      getBusIconBoy.logoExists = true;
-      getBusIconBoy.cached = (c) =>
-        L.divIcon({
-          iconAnchor: [14, 14],
-          html: `<img src="/assets/bus-logo.svg" width="28" height="28" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35))" alt="bus logo"/>`,
-          className: 'divMarker bus-icon',
-        });
-      return getBusIconBoy.cached(color);
+      let svg = await res.text();
+      svg = svg.replace(/<\?xml[^>]*\?>/g, '').replace(/<!DOCTYPE[^>]*>/g, '');
+      if (/width=/.test(svg)) svg = svg.replace(/width="[^"]*"/i, 'width="36"');
+      else svg = svg.replace(/<svg/, '<svg width="36"');
+      if (/height=/.test(svg)) svg = svg.replace(/height="[^"]*"/i, 'height="36"');
+      else svg = svg.replace(/<svg/, '<svg height="36"');
+      svg = svg.replace(/fill="#[^\"]*"/gi, `fill="${color}"`);
+      svg = svg.replace(/stroke="#[^\"]*"/gi, `stroke="${color}"`);
+      if (!/fill=/.test(svg)) svg = svg.replace(/<svg([^>]*)>/, `<svg$1 style="fill:${color}">`);
+      const html = `<div class='bus-icon'>${svg}</div>`;
+      const icon = L.divIcon({ iconAnchor: [18, 18], html: html, className: 'divMarker' });
+      getBusIconBoy.cache = icon;
+      getBusIconBoy.cacheColor = color;
+      return icon;
     }
   } catch (e) {}
-  getBusIconBoy.logoExists = false;
-  getBusIconBoy.cached = (c) =>
-    L.divIcon({
-      iconAnchor: [12, 12],
-      html: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" role="img" aria-label="Bus icon">
-        <rect x="2" y="5" width="20" height="12" rx="2" fill="${c}" stroke="#ffffff" stroke-width="1.5"/>
-        <rect x="4" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
-        <rect x="11" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
-        <circle cx="7" cy="18" r="1.6" fill="#333333"/>
-        <circle cx="17" cy="18" r="1.6" fill="#333333"/>
-      </svg>`,
-      className: 'divMarker bus-icon',
-    });
-  return getBusIconBoy.cached(color);
+  const inline = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="36" height="36" role="img" aria-label="Bus icon"><rect x="2" y="5" width="20" height="12" rx="2" fill="${color}" stroke="#ffffff" stroke-width="1.5"/><rect x="4" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/><rect x="11" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/><circle cx="7" cy="18" r="1.6" fill="#333333"/><circle cx="17" cy="18" r="1.6" fill="#333333"/></svg>`;
+  const icon = L.divIcon({ iconAnchor: [18, 18], html: `<div class='bus-icon'>${inline}</div>`, className: 'divMarker' });
+  getBusIconBoy.cache = icon;
+  getBusIconBoy.cacheColor = color;
+  return icon;
 }
 
 var vecMarkers = {};
