@@ -240,18 +240,26 @@ setStopList(boyorail);
 
 const pill = `<div style='color: ${boyorail.text}; background-color: ${boyorail.color}; border: 2px solid ${boyorail.color}; width: 1.3em;' class='route-pill trunk-pill'>${boyorail.name}</div>`;
 
-const busIcon = L.divIcon({
-  iconAnchor: [12, 12],
-  html: `<span class="material-icons" style="color: ${boyorail.color}">navigation</span>`,
-  className: "divMarker",
-});
+// create bus icon using inline SVG
+const busIcon = (color) =>
+  L.divIcon({
+    iconAnchor: [12, 12],
+    html: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" role="img" aria-label="Bus icon">
+      <rect x="2" y="5" width="20" height="12" rx="2" fill="${color}" stroke="#ffffff" stroke-width="1.5"/>
+      <rect x="4" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
+      <rect x="11" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
+      <circle cx="7" cy="18" r="1.6" fill="#333333"/>
+      <circle cx="17" cy="18" r="1.6" fill="#333333"/>
+    </svg>`,
+    className: "divMarker bus-icon",
+  });
 
 var vecMarkers = {};
 vehicles.forEach((vehicle) => {
   vecMarkers[vehicle.properties.info] = L.marker(
     [vehicle.geometry.coordinates[1], vehicle.geometry.coordinates[0]],
     {
-      icon: busIcon,
+    icon: busIcon(routeColor),
       rotationAngle: vehicle.properties.direction,
     },
   )
@@ -309,20 +317,23 @@ function setRoute(route) {
 
     // adding halte markers to map
     if (!markers.halte[halteID]) {
+      const isTerminal = currentHalte.properties.transit && currentHalte.properties.transit.length >= 4;
+      const terminalBadge = isTerminal ? "<div class='terminal-badge'>Terminal</div>" : "";
       markers.halte[halteID] = new L.circleMarker(
         {
           lat: currentHalte.geometry.coordinates[1],
           lng: currentHalte.geometry.coordinates[0],
         },
         {
-          radius: 8,
-          fillColor: "white",
+          radius: isTerminal ? 10 : 8,
+          fillColor: isTerminal ? routeColor : "white",
           fillOpacity: 1,
           color: "black",
         },
       ).bindPopup(
         `
             <p class='stop-name'>${currentHalte.properties.name}</p>
+            ${terminalBadge}
             <div class='transit-list'>
               ${transitDivs}
             </div>
@@ -425,11 +436,18 @@ async function setVehicleMarker(route, URL) {
     pill = `<a href='./map.html?route=${route.link}'><div style='color: ${route.text}; background-color: ${route.color}; border: 2px solid ${route.color}' class='route-pill trunk-pill'>${route.name}</div></a>`;
   }
 
-  const busIcon = L.divIcon({
-    iconAnchor: [12, 12],
-    html: `<span class="material-icons" style="color: ${route.color}">navigation</span>`,
-    className: "divMarker",
-  });
+  const busIcon = (color) =>
+    L.divIcon({
+      iconAnchor: [12, 12],
+      html: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" role="img" aria-label="Bus icon">
+        <rect x="2" y="5" width="20" height="12" rx="2" fill="${color}" stroke="#ffffff" stroke-width="1.5"/>
+        <rect x="4" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
+        <rect x="11" y="8" width="6" height="4" fill="#ffffff" opacity="0.9"/>
+        <circle cx="7" cy="18" r="1.6" fill="#333333"/>
+        <circle cx="17" cy="18" r="1.6" fill="#333333"/>
+      </svg>`,
+      className: "divMarker bus-icon",
+    });
 
   if (routeParams != "all" && route.code != 3) {
     $("#op-detail").text(
@@ -443,7 +461,7 @@ async function setVehicleMarker(route, URL) {
     var vecMarkers = {};
     data.forEach((vehicle) => {
       vecMarkers[vehicle.info] = L.marker([vehicle.lat, vehicle.lng], {
-        icon: busIcon,
+        icon: busIcon(route.color),
         rotationAngle: vehicle.direction,
       })
         .addTo(map)

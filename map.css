@@ -334,6 +334,29 @@ a {
     2px 0 var(--text-color), 0 -2px var(--text-color);
 }
 
+.bus-icon {
+  transform-origin: center;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.bus-icon svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.terminal-badge {
+  background: #f0ad4e;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 700;
+  display: inline-block;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+}
+
+
 .bottom-line {
   height: 5px;
   width: auto;
