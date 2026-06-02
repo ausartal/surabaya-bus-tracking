@@ -332,6 +332,11 @@ a {
 .divMarker {
   text-shadow: -2px 0 var(--text-color), 0 2px var(--text-color),
     2px 0 var(--text-color), 0 -2px var(--text-color);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px; /* increase hit area */
+  cursor: pointer;
 }
 
 .bus-icon {
@@ -356,6 +361,18 @@ a {
   margin-bottom: 6px;
   font-size: 0.85rem;
 }
+
+/* legend control */
+.leaflet-control.legend {
+  background: rgba(255,255,255,0.95);
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  font-size: 0.9rem;
+}
+.leaflet-control.legend .legend-title { font-weight:700; margin-bottom:6px; }
+.leaflet-control.legend .legend-item { display:flex; align-items:center; gap:8px; margin:4px 0; }
+.leaflet-control.legend .legend-swatch { width:14px; height:14px; border-radius:3px; border:1px solid #ddd; }
 
 /* side panel for vehicle details */
 #side-panel {

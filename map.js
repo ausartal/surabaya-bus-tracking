@@ -61,6 +61,13 @@ var halteMarkersGroup = new L.FeatureGroup();
 var routeLinesGroup = new L.FeatureGroup();
 const markers = {};
 markers.halte = {};
+markers.clusters = {}; // vehicle cluster groups per route
+
+// layer overlays control (populated later)
+var overlaysControl = L.control.layers(null, null, { collapsed: true, position: 'topright' }).addTo(map);
+// add primary overlays
+overlaysControl.addOverlay(routeLinesGroup, 'Rute');
+overlaysControl.addOverlay(halteMarkersGroup, 'Halte');
 
 const dataHalte = getData("./halte.json").halte;
 const dataRute = getData("./routedata.json");
@@ -309,45 +316,53 @@ async function getBusIcon(color) {
 
   if (!markers[route.code]) {
     var vecMarkers = {};
-  const protoIcon = await getBusIcon(route.color);
-  for (const vehicle of data) {
-    const popupHtml = `${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`;
-    vecMarkers[vehicle.info] = L.marker([vehicle.lat, vehicle.lng], {
-      icon: protoIcon,
-      rotationAngle: vehicle.direction,
-    })
-      .addTo(map)
-      .bindPopup(popupHtml);
-      
-    // attach click handler for opening side panel from the marker itself
-    vecMarkers[vehicle.info].on('click', function () {
-      openSidePanel(vehicle.info, vehicle.lat, vehicle.lng, vehicle);
-    });
-  }
+    // create cluster group for this route if needed
+    if (!markers.clusters[route.code]) {
+      markers.clusters[route.code] = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 40, spiderfyOnMaxZoom: true, showCoverageOnHover: false });
+      map.addLayer(markers.clusters[route.code]);
+      overlaysControl.addOverlay(markers.clusters[route.code], route.name);
+    }
+    const protoIcon = await getBusIcon(route.color);
+    for (const vehicle of data) {
+      const popupHtml = `${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`;
+      const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction }).bindPopup(popupHtml);
+      markers.clusters[route.code].addLayer(m);
+      vecMarkers[vehicle.info] = m;
+
+      // attach click handler for opening side panel from the marker itself
+      m.on('click', function () {
+        openSidePanel(vehicle.info, vehicle.lat, vehicle.lng, vehicle);
+      });
+    }
     markers[route.code] = vecMarkers;
 
-  // ensure side panel DOM exists
-  if (!document.getElementById('side-panel')) {
-    const sp = document.createElement('div');
-    sp.id = 'side-panel';
-    sp.innerHTML = `<div class="panel-header"><span class="close" onclick="closeSidePanel()">×</span><h3 id="panel-title">Detail Kendaraan</h3></div><div id="panel-body">Pilih kendaraan untuk melihat detail.</div>`;
-    document.body.appendChild(sp);
-  }
-  } else {
-  const protoIcon = await getBusIcon(route.color);
-  for (const vehicle of data) {
-    if (markers[route.code][vehicle.info]) {
-      markers[route.code][vehicle.info]
-        .setRotationAngle(vehicle.direction)
-        .setLatLng([vehicle.lat, vehicle.lng])
-        .bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`);
-    } else {
-      const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction })
-        .addTo(map)
-        .bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`);
-      markers[route.code][vehicle.info] = m;
+    // ensure side panel DOM exists
+    if (!document.getElementById('side-panel')) {
+      const sp = document.createElement('div');
+      sp.id = 'side-panel';
+      sp.innerHTML = `<div class="panel-header"><span class="close" onclick="closeSidePanel()">×</span><h3 id="panel-title">Detail Kendaraan</h3></div><div id="panel-body">Pilih kendaraan untuk melihat detail.</div>`;
+      document.body.appendChild(sp);
     }
-  }
+  } else {
+    // ensure cluster exists for updates
+    if (!markers.clusters[route.code]) {
+      markers.clusters[route.code] = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 40, spiderfyOnMaxZoom: true, showCoverageOnHover: false });
+      map.addLayer(markers.clusters[route.code]);
+      overlaysControl.addOverlay(markers.clusters[route.code], route.name);
+    }
+    const protoIcon = await getBusIcon(route.color);
+    for (const vehicle of data) {
+      if (markers[route.code][vehicle.info]) {
+        markers[route.code][vehicle.info]
+          .setRotationAngle(vehicle.direction)
+          .setLatLng([vehicle.lat, vehicle.lng])
+          .bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`);
+      } else {
+        const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction }).bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`);
+        markers.clusters[route.code].addLayer(m);
+        markers[route.code][vehicle.info] = m;
+      }
+    }
   }
   setTimeout(() => {
     setVehicleMarker(route, URL);
