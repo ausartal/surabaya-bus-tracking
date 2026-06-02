@@ -245,7 +245,7 @@ async function getBusIconBoy(color) {
   if (getBusIconBoy.checked) return getBusIconBoy.cached(color);
   getBusIconBoy.checked = true;
   try {
-    const res = await fetch('/assets/bus-logo.svg', { method: 'HEAD' });
+    const res = await fetch('/images/bus-front.svg', { method: 'HEAD' });
     if (res.ok) {
       getBusIconBoy.logoExists = true;
       getBusIconBoy.cached = (c) =>
