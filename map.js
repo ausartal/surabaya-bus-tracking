@@ -80,6 +80,12 @@ const trackerState = {
   mapFocus: false,
 };
 let lastHighlight = null;
+const userTrack = {
+  watchId: null,
+  path: null,
+  accuracy: null,
+  hasCentered: false,
+};
 
 function updateLiveStatus(ts) {
   const el = document.getElementById("live-status");
@@ -96,6 +102,20 @@ function updateFollowBadge() {
     badge.classList.remove("hidden");
   } else {
     badge.classList.add("hidden");
+  }
+}
+
+function updateUserTrackBadge(active) {
+  const badge = document.getElementById("user-track-badge");
+  const btn = document.getElementById("location-button");
+  if (!badge || !btn) return;
+  if (active) {
+    badge.textContent = "Tracking: On";
+    badge.classList.remove("hidden");
+    btn.classList.add("active");
+  } else {
+    badge.classList.add("hidden");
+    btn.classList.remove("active");
   }
 }
 
@@ -659,24 +679,42 @@ function popupHandler(halteID) {
 
 // handle locations and stuff
 function getLocation() {
-  if (!markers.gps) {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(showPosition, showError);
-    } else {
-      Toastify({
-        text: "Geolocation is not supported by this browser.",
-        style: {
-          backgroud: "#FF0000",
-        },
-      }).showToast();
-    }
-  } else {
-    map.setView(markers.gps._latlng, 17);
+  if (userTrack.watchId) {
+    stopUserTracking();
+    return;
   }
+  startUserTracking();
 }
 
-function updatePosition() {
-  navigator.geolocation.getCurrentPosition(showPosition, showError);
+function startUserTracking() {
+  if (!navigator.geolocation) {
+    Toastify({
+      text: "Geolocation is not supported by this browser.",
+      style: {
+        backgroud: "#FF0000",
+      },
+    }).showToast();
+    return;
+  }
+  userTrack.hasCentered = false;
+  userTrack.watchId = navigator.geolocation.watchPosition(showPosition, showError, {
+    enableHighAccuracy: true,
+    maximumAge: 5000,
+    timeout: 10000,
+  });
+  updateUserTrackBadge(true);
+  Toastify({ text: "Tracking lokasi aktif", duration: 2000 }).showToast();
+}
+
+function stopUserTracking(silent) {
+  if (userTrack.watchId) {
+    navigator.geolocation.clearWatch(userTrack.watchId);
+    userTrack.watchId = null;
+  }
+  updateUserTrackBadge(false);
+  if (!silent) {
+    Toastify({ text: "Tracking lokasi berhenti", duration: 2000 }).showToast();
+  }
 }
 
 function showPosition(position) {
@@ -688,26 +726,46 @@ function showPosition(position) {
     fillOpacity: 1,
   };
 
+  const latlng = [position.coords.latitude, position.coords.longitude];
   if (!markers.gps) {
-    markers.gps = L.circleMarker(
-      [position.coords.latitude, position.coords.longitude],
-      markerOption
-    ).addTo(map);
-    map.setView(markers.gps._latlng, 17);
+    markers.gps = L.circleMarker(latlng, markerOption).addTo(map);
   } else {
-    markers.gps.setLatLng([
-      position.coords.latitude,
-      position.coords.longitude,
-    ]);
+    markers.gps.setLatLng(latlng);
   }
 
-  setTimeout(() => {
-    updatePosition();
-  }, 5000);
+  if (!userTrack.accuracy) {
+    userTrack.accuracy = L.circle(latlng, {
+      radius: position.coords.accuracy || 0,
+      color: "#60a5fa",
+      fillColor: "#93c5fd",
+      fillOpacity: 0.2,
+      weight: 1,
+    }).addTo(map);
+  } else {
+    userTrack.accuracy.setLatLng(latlng);
+    if (position.coords.accuracy) userTrack.accuracy.setRadius(position.coords.accuracy);
+  }
+
+  if (!userTrack.path) {
+    userTrack.path = L.polyline([latlng], {
+      color: "#2563eb",
+      weight: 3,
+      opacity: 0.7,
+    }).addTo(map);
+  } else {
+    userTrack.path.addLatLng(latlng);
+  }
+
+  if (!userTrack.hasCentered) {
+    map.setView(latlng, 17);
+    userTrack.hasCentered = true;
+  }
+  updateUserTrackBadge(true);
 }
 
 function showError(error) {
   const color = "#FF0000";
+  if (userTrack.watchId) stopUserTracking(true);
   switch (error.code) {
     case error.PERMISSION_DENIED:
       Toastify({
