@@ -313,81 +313,55 @@ async function getBusIcon(color) {
     );
   }
 
-  if (!markers[route.code]) {
-    var vecMarkers = {};
-    // create cluster group for this route if needed
-    if (!markers.clusters[route.code]) {
-      markers.clusters[route.code] = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 40, spiderfyOnMaxZoom: true, showCoverageOnHover: false,
-        iconCreateFunction: function(cluster) {
-          const count = cluster.getChildCount();
-          const html = `<div class="cluster-icon" style="background:${route.color}"><span>${count}</span></div>`;
-          return L.divIcon({ html: html, className: 'cluster-marker', iconSize: L.point(44,44) });
-        }
-      });
-      map.addLayer(markers.clusters[route.code]);
-      overlaysControl.addOverlay(markers.clusters[route.code], route.name);
-    }
-    const protoIcon = await getBusIcon(route.color);
-    for (const vehicle of data) {
-      const lastSeen = vehicle.timestamp ? new Date(vehicle.timestamp) : new Date();
-      const timeStr = lastSeen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const popupHtml = `
-        <div class="popup-brief">
-          <img src="/images/bus-front.svg" alt="bus" width="28" height="28" />
-          <div class="popup-info">
-            ${pill}<div><strong>${vehicle.info}</strong></div>
-            <div class="muted">Kecepatan: ${vehicle.speed || '-'} | ${timeStr}</div>
-          </div>
-        </div>
-        <div class='popup-actions'>
-          <button class='action-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng}, ${JSON.stringify(vehicle).replace(/'/g,"\\'")})">Details</button>
-          <a class='action-btn' href="https://maps.google.com?saddr=Current+Location&daddr=${vehicle.lat},${vehicle.lng}" target="_blank">Navigate</a>
-        </div>`;
-      const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction }).bindPopup(popupHtml);
-      markers.clusters[route.code].addLayer(m);
-      vecMarkers[vehicle.info] = m;
+  // schedule updates via a short debounce to batch DOM changes
+  if (!window._pendingUpdates) window._pendingUpdates = {};
+  window._pendingUpdates[route.code] = { route, data };
+  if (window._applyTimer) clearTimeout(window._applyTimer);
+  window._applyTimer = setTimeout(async () => {
+    const updates = Object.assign({}, window._pendingUpdates);
+    window._pendingUpdates = {};
+    for (const rc of Object.keys(updates)) {
+      const upd = updates[rc];
+      const r = upd.route;
+      const vehicles = upd.data;
 
-      // attach click handler for opening side panel from the marker itself
-      m.on('click', function () {
-        openSidePanel(vehicle.info, vehicle.lat, vehicle.lng, vehicle);
-      });
-    }
-    markers[route.code] = vecMarkers;
-
-    // ensure side panel DOM exists
-    if (!document.getElementById('side-panel')) {
-      const sp = document.createElement('div');
-      sp.id = 'side-panel';
-      sp.innerHTML = `<div class="panel-header"><span class="close" onclick="closeSidePanel()">×</span><h3 id="panel-title">Detail Kendaraan</h3></div><div id="panel-body">Pilih kendaraan untuk melihat detail.</div>`;
-      document.body.appendChild(sp);
-    }
-  } else {
-    // ensure cluster exists for updates
-    if (!markers.clusters[route.code]) {
-      markers.clusters[route.code] = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 40, spiderfyOnMaxZoom: true, showCoverageOnHover: false,
-        iconCreateFunction: function(cluster) {
-          const count = cluster.getChildCount();
-          const html = `<div class="cluster-icon" style="background:${route.color}"><span>${count}</span></div>`;
-          return L.divIcon({ html: html, className: 'cluster-marker', iconSize: L.point(44,44) });
-        }
-      });
-      map.addLayer(markers.clusters[route.code]);
-      overlaysControl.addOverlay(markers.clusters[route.code], route.name);
-    }
-    const protoIcon = await getBusIcon(route.color);
-    for (const vehicle of data) {
-      if (markers[route.code][vehicle.info]) {
-        markers[route.code][vehicle.info]
-          .setRotationAngle(vehicle.direction)
-          .setLatLng([vehicle.lat, vehicle.lng])
-          .bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`);
-      } else {
-        const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction }).bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`);
-        markers.clusters[route.code].addLayer(m);
-        markers[route.code][vehicle.info] = m;
+      // prepare cluster for this route if needed
+      if (!markers.clusters[r.code]) {
+        markers.clusters[r.code] = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 40, spiderfyOnMaxZoom: true, showCoverageOnHover: false,
+          iconCreateFunction: function(cluster) {
+            const children = cluster.getAllChildMarkers();
+            const counts = {}; let total = 0;
+            children.forEach(ch => { const c = (ch.options && ch.options.routeColor) || ch.routeColor || '#999999'; counts[c] = (counts[c]||0)+1; total++; });
+            let start = 0; const cx=22,cy=22,radius=18; const svgs = [];
+            Object.keys(counts).forEach(col => { const val = counts[col]/total; const end = start+val; const sa = start*Math.PI*2 - Math.PI/2; const ea = end*Math.PI*2 - Math.PI/2; const x1 = cx + radius*Math.cos(sa); const y1 = cy + radius*Math.sin(sa); const x2 = cx + radius*Math.cos(ea); const y2 = cy + radius*Math.sin(ea); const large = val>0.5?1:0; svgs.push(`<path d="M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${large} 1 ${x2} ${y2} Z" fill="${col}" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>`); start = end; });
+            const svg = `<svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">${svgs.join('')}<circle cx="22" cy="22" r="10" fill="rgba(0,0,0,0.35)"/><text x="22" y="26" text-anchor="middle" font-size="12" fill="#fff">${total}</text></svg>`;
+            return L.divIcon({ html: svg, className: 'cluster-marker', iconSize: L.point(44,44) });
+          }
+        });
+        map.addLayer(markers.clusters[r.code]);
+        overlaysControl.addOverlay(markers.clusters[r.code], r.name);
       }
+
+      if (!markers[r.code]) markers[r.code] = {};
+      const existing = markers[r.code];
+      const seen = {};
+      const protoIcon = await getBusIcon(r.color);
+      for (const vehicle of vehicles) {
+        seen[vehicle.info] = true;
+        if (existing[vehicle.info]) {
+          try { existing[vehicle.info].setLatLng([vehicle.lat, vehicle.lng]); existing[vehicle.info].setRotationAngle(vehicle.direction||0); existing[vehicle.info].bindPopup(`${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}`); } catch (e) {}
+        } else {
+          const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction, routeColor: r.color });
+          m.routeColor = r.color;
+          m.on('click', function () { openSidePanel(vehicle.info, vehicle.lat, vehicle.lng, vehicle); });
+          markers.clusters[r.code].addLayer(m);
+          markers[r.code][vehicle.info] = m;
+        }
+      }
+      // remove stale markers
+      Object.keys(existing).forEach(k => { if (!seen[k]) { try { markers.clusters[r.code].removeLayer(existing[k]); } catch (e){} delete markers[r.code][k]; }});
     }
-  }
+  }, 350);
   setTimeout(() => {
     setVehicleMarker(route, URL);
   }, 5000);
