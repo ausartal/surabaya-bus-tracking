@@ -83,14 +83,11 @@ if (routeParams != "all") {
   $("#route-name").text(routeTitle);
   $("#op-hour").text(route.hours);
 
-  $(":root")
-    .get(0)
-    .style.setProperty(
-      "--accent-color",
-      `${hexToRgb(route.color).r}, ${hexToRgb(route.color).g}, ${
-        hexToRgb(route.color).b
-      }`
-    );
+  const _rgb = hexToRgb(route.color);
+  const _lum = (_rgb.r * 0.2126 + _rgb.g * 0.7152 + _rgb.b * 0.0722) / 255;
+  const _text = _lum > 0.6 ? '#000000' : '#ffffff';
+  $(":root").get(0).style.setProperty("--accent-color", `${_rgb.r}, ${_rgb.g}, ${_rgb.b}`);
+  $(":root").get(0).style.setProperty("--accent-text", _text);
   if (routeParams == "sbr1") {
     setRoute(dataRute.sbrt);
     setVehicleMarker(dataRute.sbrt, dataTracking[dataRute.sbrt.code]);
@@ -119,6 +116,8 @@ function setRoute(route) {
     color: route.color,
     weight: 5,
     smoothFactor: 1,
+    className: 'route-line',
+    dashArray: '8'
   });
   routePoly.addTo(map);
   routeLinesGroup.addLayer(routePoly);
@@ -318,7 +317,13 @@ async function getBusIcon(color) {
     var vecMarkers = {};
     // create cluster group for this route if needed
     if (!markers.clusters[route.code]) {
-      markers.clusters[route.code] = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 40, spiderfyOnMaxZoom: true, showCoverageOnHover: false });
+      markers.clusters[route.code] = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 40, spiderfyOnMaxZoom: true, showCoverageOnHover: false,
+        iconCreateFunction: function(cluster) {
+          const count = cluster.getChildCount();
+          const html = `<div class="cluster-icon" style="background:${route.color}"><span>${count}</span></div>`;
+          return L.divIcon({ html: html, className: 'cluster-marker', iconSize: L.point(44,44) });
+        }
+      });
       map.addLayer(markers.clusters[route.code]);
       overlaysControl.addOverlay(markers.clusters[route.code], route.name);
     }
@@ -359,7 +364,13 @@ async function getBusIcon(color) {
   } else {
     // ensure cluster exists for updates
     if (!markers.clusters[route.code]) {
-      markers.clusters[route.code] = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 40, spiderfyOnMaxZoom: true, showCoverageOnHover: false });
+      markers.clusters[route.code] = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 40, spiderfyOnMaxZoom: true, showCoverageOnHover: false,
+        iconCreateFunction: function(cluster) {
+          const count = cluster.getChildCount();
+          const html = `<div class="cluster-icon" style="background:${route.color}"><span>${count}</span></div>`;
+          return L.divIcon({ html: html, className: 'cluster-marker', iconSize: L.point(44,44) });
+        }
+      });
       map.addLayer(markers.clusters[route.code]);
       overlaysControl.addOverlay(markers.clusters[route.code], route.name);
     }

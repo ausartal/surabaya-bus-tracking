@@ -48,3 +48,16 @@ body{font-family: 'Noto Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Ari
 @media(min-width:1000px){
   #map-container{margin-left:var(--panel-width);border-radius:12px;overflow:hidden}
 }
+
+/* cluster icon */
+.cluster-marker { display:flex; align-items:center; justify-content:center; }
+.cluster-icon { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; box-shadow:0 6px 18px rgba(0,0,0,0.18); border:4px solid rgba(255,255,255,0.8); }
+.cluster-icon span{ font-size:14px; }
+
+/* animated route line */
+.route-line { stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: draw-route 1.4s ease forwards; }
+@keyframes draw-route { to { stroke-dashoffset: 0; } }
+
+/* ensure popups and panel have subtle transitions */
+.leaflet-popup { transition: transform 160ms ease, opacity 160ms ease; }
+#side-panel { transition: transform 260ms cubic-bezier(.2,.9,.3,1), opacity 160ms ease; }
