@@ -390,9 +390,32 @@ a {
   overflow-y: auto;
 }
 #side-panel.open { transform: translateX(0); }
+#side-panel.bottom { right: auto; left: 0; bottom: 0; top: auto; width: 100%; height: auto; max-height: 60vh; transform: translateY(100%); border-radius: 12px 12px 0 0; }
+#side-panel.open.bottom { transform: translateY(0); }
 #side-panel .close { cursor: pointer; font-weight:700; }
 .popup-actions { margin-top:8px; }
 .details-btn { background: var(--accent-color); color: var(--accent-text); border: none; padding: 6px 10px; border-radius: 8px; cursor:pointer; }
+
+.vehicle-head { display:flex; gap:10px; align-items:center; }
+.vehicle-img { border-radius:8px; box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+.vehicle-meta h4 { margin:0; }
+.vehicle-stats { margin-top:8px; display:grid; gap:6px; }
+.panel-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.action-btn { background: #f5f5f5; border: 1px solid #e6e6e6; padding:8px 10px; border-radius:8px; cursor:pointer; text-decoration:none; color:inherit; }
+.action-btn.active { background: var(--accent-color); color: var(--accent-text); }
+
+/* popup brief */
+.popup-brief { display:flex; gap:8px; align-items:center; }
+.popup-brief img { border-radius:6px; }
+.popup-info { display:flex; flex-direction:column; }
+.muted { color: #666; font-size:0.9rem; }
+
+@media (max-width:600px) {
+  #route-panel { display:none; }
+  #side-panel { width:100%; }
+  .action-btn { flex:1 1 auto; }
+}
+
 
 .bottom-line {
   height: 5px;

@@ -324,7 +324,20 @@ async function getBusIcon(color) {
     }
     const protoIcon = await getBusIcon(route.color);
     for (const vehicle of data) {
-      const popupHtml = `${pill}<b>${vehicle.info}</b><br><b>Kecepatan :</b> ${vehicle.speed}<div class='popup-actions'><button class='details-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng})">Details</button></div>`;
+      const lastSeen = vehicle.timestamp ? new Date(vehicle.timestamp) : new Date();
+      const timeStr = lastSeen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const popupHtml = `
+        <div class="popup-brief">
+          <img src="/images/bus-front.svg" alt="bus" width="28" height="28" />
+          <div class="popup-info">
+            ${pill}<div><strong>${vehicle.info}</strong></div>
+            <div class="muted">Kecepatan: ${vehicle.speed || '-'} | ${timeStr}</div>
+          </div>
+        </div>
+        <div class='popup-actions'>
+          <button class='action-btn' onclick="openSidePanel('${vehicle.info}', ${vehicle.lat}, ${vehicle.lng}, ${JSON.stringify(vehicle).replace(/'/g,"\\'")})">Details</button>
+          <a class='action-btn' href="https://maps.google.com?saddr=Current+Location&daddr=${vehicle.lat},${vehicle.lng}" target="_blank">Navigate</a>
+        </div>`;
       const m = L.marker([vehicle.lat, vehicle.lng], { icon: protoIcon, rotationAngle: vehicle.direction }).bindPopup(popupHtml);
       markers.clusters[route.code].addLayer(m);
       vecMarkers[vehicle.info] = m;
@@ -372,10 +385,34 @@ async function getBusIcon(color) {
   window.openSidePanel = function (id, lat, lon, vehicle) {
     const panel = document.getElementById('side-panel');
     if (!panel) return;
+    // if mobile, show as bottom sheet
+    if (window.innerWidth <= 600) panel.classList.add('bottom');
     panel.classList.add('open');
     document.getElementById('panel-title').innerText = 'Kendaraan ' + id;
     const body = document.getElementById('panel-body');
-    body.innerHTML = `<p><strong>ID:</strong> ${id}</p><p><strong>Lokasi:</strong> ${lat.toFixed(5)}, ${lon.toFixed(5)}</p><p><strong>Rute:</strong> ${route.name || ''}</p><p><strong>Kecepatan:</strong> ${vehicle && vehicle.speed ? vehicle.speed : '-'}</p><p><strong>Arah:</strong> ${vehicle && vehicle.direction ? vehicle.direction : '-'}</p>`;
+    const lastSeen = vehicle && (vehicle.timestamp || vehicle.last_update) ? new Date(vehicle.timestamp || vehicle.last_update) : new Date();
+    const timeStr = lastSeen.toLocaleString();
+    body.innerHTML = `
+      <div class="vehicle-head">
+        <img src="/images/bus-front.svg" alt="bus" class="vehicle-img" width="64" height="64" />
+        <div class="vehicle-meta">
+          <h4>${id}</h4>
+          <div class="muted">Rute: ${route.name || '-'}</div>
+          <div class="muted">Terakhir: ${timeStr}</div>
+        </div>
+      </div>
+      <div class="vehicle-stats">
+        <div><strong>Kecepatan:</strong> ${vehicle && vehicle.speed ? vehicle.speed + ' km/h' : '-'}</div>
+        <div><strong>Arah:</strong> ${vehicle && vehicle.direction ? vehicle.direction : '-'}</div>
+        <div><strong>Lokasi:</strong> ${lat.toFixed(5)}, ${lon.toFixed(5)}</div>
+      </div>
+      <div class="panel-actions">
+        <a class="action-btn" href="https://maps.google.com?saddr=Current+Location&daddr=${lat},${lon}" target="_blank">Navigasi</a>
+        <button class="action-btn" onclick="map.setView([${lat}, ${lon}], 17)">Center</button>
+        <button class="action-btn" id="follow-btn" onclick="(function(b){b.classList.toggle('active'); window.following = window.following === '${id}' ? null : '${id}';})(document.getElementById('follow-btn'))">Follow</button>
+        <button class="action-btn" onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?route=' + (route.link || 'all') + '&lat=${lat}&lon=${lon}');">Copy Link</button>
+      </div>
+    `;
     // center map on marker
     map.setView([lat, lon], Math.max(map.getZoom(), 16));
   };
@@ -383,6 +420,7 @@ async function getBusIcon(color) {
     const panel = document.getElementById('side-panel');
     if (!panel) return;
     panel.classList.remove('open');
+    panel.classList.remove('bottom');
   };
 }
 
